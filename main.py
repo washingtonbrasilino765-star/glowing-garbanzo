@@ -475,90 +475,23 @@ async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db
 # ==========================================
 @app.get("/api/vitrine/{nome_plataforma}")
 def buscar_produtos_vitrine(nome_plataforma: str, db: Session = Depends(get_db)):
-    """
-    Rota consumida pelo Netlify. Recebe o nome da plataforma, busca no 
-    banco de dados e devolve as últimas 20 ofertas formatadas em JSON.
-    """
-    # 1. Ajuste de Busca:
-    # A vitrine vai enviar "Mercado Livre" (com espaço e maiúscula). 
-    # Precisamos garantir que bata com o que você salva no banco (ex: "mercadolivre" ou "Mercado Livre").
-    # Para ser seguro, fazemos uma busca flexível usando ILIKE (ignorando maiúsculas).
-    from sqlalchemy import func
-    
-    produtos_db = (
-        db.query(models.Link)
-        .filter(func.lower(models.Link.plataforma).like(f"%{nome_plataforma.lower()}%"))
-        .order_by(models.Link.gerado_em.desc())
-        .limit(20)
-        .all()
-    )
-
-    if not produtos_db:
-        return {"status": "vazio", "produtos": []}
-
-    lista_produtos = []
-    for prod in produtos_db:
-        # 2. Resgate de Campos:
-        # Importante: Estou assumindo que o seu models.Link tem colunas como 'nome_produto', 
-        # 'imagem_url' e 'preco_oferta', baseando-me na sua classe ProdutoCreate.
-        # Caso o seu models.py chame a imagem de forma diferente (ex: prod.foto), 
-        # você precisará ajustar o termo após o "prod." abaixo.
+    try:
+        # Busca no banco de dados filtrando pelo nome da plataforma
+        produtos_db = db.query(models.Link).filter(
+            models.Link.plataforma.ilike(f"%{nome_plataforma}%")
+        ).order_by(models.Link.gerado_em.desc()).limit(20).all()
         
-        # Formata o preço para o padrão brasileiro (ex: 52.99 -> 52,99)
-        preco_formatado = "0,00"
-        # O try/except garante que a página não quebre se houver um produto sem preço
-        try:
-            # Aqui buscamos os dados que você enviou pelo formulário web
-            # e que agora precisam estar no seu banco de dados
-            preco_float = getattr(prod, 'preco_oferta', 0.0) 
-            preco_formatado = f"{preco_float:.2f}".replace(".", ",")
-        except Exception:
-            pass
-
-        nome_prod = getattr(prod, 'nome_produto', 'Produto sem título')
-        img_url = getattr(prod, 'imagem_url', 'https://via.placeholder.com/150')
-
-        lista_produtos.append({
-            "nome": nome_prod,
-            "imagem": img_url,
-            "preco": f"R$ {preco_formatado}",
-            # Aqui aproveitamos a sua lógica de encurtamento. A vitrine não manda
-            # direto pra loja, manda pro seu encurtador ({slug}), ativando a 
-            # sua rota redirecionar_link e contando o clique!
-            "link": f"/{prod.slug}" 
-        })
-
-    return {"status": "sucesso", "produtos": lista_produtos}
-
-@app.get("/{slug}")
-def redirecionar_link(slug: str, db: Session = Depends(get_db)):
-    """Recebe o clique do usuário e redireciona para a loja."""
-    link_db = db.query(models.Link).filter(models.Link.slug == slug).first()
-
-    if not link_db:
-        raise HTTPException(status_code=404, detail="Link não encontrado")
-
-    link_db.cliques += 1
-    agora = datetime.now(timezone.utc)
-    gerado_em = link_db.gerado_em
-
-    if gerado_em is not None and gerado_em.tzinfo is None:
-        gerado_em = gerado_em.replace(tzinfo=timezone.utc)
-
-    horas_desde_geracao = (agora - gerado_em).total_seconds() / 3600 if gerado_em else 999
-
-    if not link_db.link_afiliado_cache or horas_desde_geracao > 20:
-        try:
-            link_db.link_afiliado_cache = gerar_novo_link_na_api(
-                link_db.id_produto_original, link_db.plataforma
-            )
-            link_db.gerado_em = agora
-        except ValueError:
-            # Não foi possível regenerar (ex: cadastro antigo de Mercado
-            # Livre sem link completo) — mantém o que já está em cache em
-            # vez de quebrar o clique de quem está comprando.
-            pass
-
-    db.commit()
-
-    return RedirectResponse(url=link_db.link_afiliado_cache, status_code=302)
+        lista_produtos = []
+        for p in produtos_db:
+            # O JavaScript da vitrine espera exatamente estes 4 campos
+            lista_produtos.append({
+                "imagem": p.imagem_url or "https://via.placeholder.com/220",
+                "nome": p.nome_produto or "Produto sem nome",
+                "preco": f"R$ {p.preco_oferta:.2f}".replace('.', ','),
+                "link": p.link_afiliado_cache
+            })
+            
+        return {"produtos": lista_produtos}
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
