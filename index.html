@@ -230,7 +230,7 @@
                 container.innerHTML = "<p>Carregando ofertas...</p>"; // Exibe mensagem temporária enquanto o túnel viaja
 
                 // A MÁGICA: O JavaScript liga direto no seu link público gerado no terminal
-                fetch('https://33f5505b22ad9f.lhr.life/api/vitrine/' + nomePlataforma)
+                fetch('https://glowing-garbanzo-noo0.onrender.com/api/vitrine/' + nomePlataforma)
                     .then(response => response.json())
                     .then(dados => {
                         let listaProdutos = dados.produtos;
