@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uma mão na roda Ofertas — Instalar coletor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12161d; --surface: #1a2029; --surface-2: #212836; --border: #2a3241;
+    --text: #eef0f3; --text-muted: #8b93a1; --accent: #ff6b35; --savings: #2dd4a7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 48px 20px; background: var(--bg); color: var(--text);
+    font-family: 'Inter', sans-serif; display: flex; justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  .eyebrow-link { color: var(--text-muted); font-size: 13px; }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px;
+    line-height: 1.15; margin: 4px 0 4px;
+  }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin: 0 0 32px; max-width: 46ch; }
+  .passo {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .passo .numero {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--accent);
+    font-size: 13px; margin-bottom: 6px;
+  }
+  .passo p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text); }
+  .passo p.detalhe { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
+
+  .bookmarklet {
+    display: inline-block; background: var(--accent); color: #14161a; text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px;
+    padding: 11px 20px; border-radius: 8px; cursor: grab; margin-top: 4px;
+  }
+  .bookmarklet:active { cursor: grabbing; }
+
+  details { margin-top: 10px; }
+  summary { color: var(--text-muted); font-size: 12px; cursor: pointer; }
+  textarea {
+    width: 100%; margin-top: 8px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text-muted); font-size: 11px; padding: 10px;
+    resize: vertical; min-height: 70px; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow-link">Uma mão na roda Ofertas</span>
+  <h1>Coletor de produto</h1>
+  <p class="subtitle">Um favorito que lê nome, imagem e preço da página do produto e já abre o formulário preenchido.</p>
+
+  <div class="passo">
+    <p class="numero">Passo 1</p>
+    <p>Mostra a barra de favoritos do seu navegador, se ela estiver escondida.</p>
+    <p class="detalhe">Chrome/Edge: Ctrl+Shift+B. Firefox: Ctrl+Shift+B também.</p>
+  </div>
+
+  <div class="passo">
+    <p class="numero">Passo 2</p>
+    <p>Arrasta este botão para a barra de favoritos:</p>
+    <a class="bookmarklet" id="link-bookmarklet" href="#">📎 Coletar oferta</a>
+    <details>
+      <summary>Não consegue arrastar? Cria manualmente</summary>
+      <p class="detalhe">Cria um novo favorito com o nome "Coletar oferta" e cola este endereço nele:</p>
+      <textarea id="codigo-bookmarklet" readonly></textarea>
+    </details>
+  </div>
+
+  <div class="passo">
+    <p class="numero">Passo 3</p>
+    <p>Abre a página do produto no Mercado Livre, Shopee, Amazon ou AliExpress, clica no favorito "Coletar oferta" e revisa os dados antes de publicar.</p>
+    <p class="detalhe">Preço e imagem nem sempre vêm perfeitos de todo site — confira antes de publicar.</p>
+  </div>
+</div>
+
+<script>
+  const codigo = `(function(){
+    function limparPreco(t){
+      if(!t) return null;
+      const m = String(t).replace(/[^\\d.,]/g,'');
+      let n;
+      if (m.indexOf(',') > -1 && m.lastIndexOf(',') > m.lastIndexOf('.')) {
+        n = parseFloat(m.replace(/\\./g,'').replace(',','.'));
+      } else {
+        n = parseFloat(m.replace(/,/g,''));
+      }
+      return isNaN(n) ? null : n;
+    }
+    let dados = { nome:null, imagem:null, precoOriginal:null, precoOferta:null };
+    document.querySelectorAll('script[type="application/ld+json"]').forEach(function(tag){
+      try {
+        const json = JSON.parse(tag.textContent);
+        const itens = Array.isArray(json) ? json : [json];
+        itens.forEach(function(item){
+          const tipo = item['@type'];
+          const ehProduto = tipo === 'Product' || (Array.isArray(tipo) && tipo.indexOf('Product') > -1);
+          if(!ehProduto) return;
+          dados.nome = dados.nome || item.name;
+          const img = Array.isArray(item.image) ? item.image[0] : item.image;
+          dados.imagem = dados.imagem || img;
+          let oferta = item.offers;
+          if(Array.isArray(oferta)) oferta = oferta[0];
+          if(oferta && oferta.price) dados.precoOferta = dados.precoOferta || parseFloat(oferta.price);
+        });
+      } catch(e){}
+    });
+    if(!dados.nome){
+      const og = document.querySelector('meta[property="og:title"]');
+      if(og) dados.nome = og.content;
+    }
+    if(!dados.nome){
+      const h1 = document.querySelector('h1');
+      if(h1) dados.nome = h1.innerText.trim();
+    }
+    if(!dados.imagem){
+      const ogImg = document.querySelector('meta[property="og:image"]');
+      if(ogImg) dados.imagem = ogImg.content;
+    }
+    if(!dados.precoOferta || !dados.precoOriginal){
+      const corpo = document.body.innerText;
+      const achados = corpo.match(/R\\$\\s?[\\d.,]+/g) || [];
+      const numeros = achados.map(limparPreco).filter(function(n){ return n && n > 1 && n < 1000000; });
+      if(numeros.length){
+        const unicos = Array.from(new Set(numeros)).sort(function(a,b){ return b - a; });
+        if(!dados.precoOferta) dados.precoOferta = unicos[unicos.length - 1];
+        if(!dados.precoOriginal && unicos.length > 1 && unicos[0] !== dados.precoOferta) dados.precoOriginal = unicos[0];
+      }
+    }
+    let plataforma = 'Mercado Livre';
+    const host = window.location.hostname;
+    if(host.indexOf('shopee') > -1) plataforma = 'Shopee';
+    else if(host.indexOf('amazon') > -1) plataforma = 'Amazon';
+    else if(host.indexOf('aliexpress') > -1) plataforma = 'AliExpress';
+    const params = new URLSearchParams({
+      nome_produto: dados.nome || '',
+      plataforma: plataforma,
+      id_produto_original: window.location.href,
+      imagem_url: dados.imagem || '',
+      preco_original: dados.precoOriginal || '',
+      preco_oferta: dados.precoOferta || ''
+    });
+    window.open('http://127.0.0.1:8000/formulario?' + params.toString(), '_blank');
+  })();`.replace(/\s+/g, ' ').trim();
+
+  const href = 'javascript:' + encodeURIComponent(codigo);
+  document.getElementById('link-bookmarklet').setAttribute('href', href);
+  document.getElementById('codigo-bookmarklet').value = href;
+</script>
+</body>
+</html>

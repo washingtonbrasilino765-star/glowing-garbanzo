@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vitrine de Ofertas</title>
+
+    <!-- TAG DE VERIFICAÇÃO DO GOOGLE SEARCH CONSOLE -->
+    <meta name="google-site-verification" content="jUIxnB1pjJibTh6qD1ORogjmM_E4cMokGfxafRw2gRk" />
+
+    <!-- Biblioteca essencial para o sistema nativo do Telegram -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background-color: var(--tg-theme-bg-color, #f4f4f9);
+            color: var(--tg-theme-text-color, #000000);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 24px 20px 40px;
+            text-align: center;
+            box-sizing: border-box;
+
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 28px;
+        }
+
+        h2 { font-size: 1.6rem; margin: 0; }
+        p { font-size: 1.05rem; max-width: 30rem; line-height: 1.4; margin: 0; }
+
+        .grade-plataformas {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 26rem;
+        }
+
+        .botao-plataforma {
+            appearance: none;
+            -webkit-appearance: none;
+            font-family: inherit;
+            cursor: pointer;
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 1.25rem 0.75rem;
+            min-height: 7.5rem;
+            background-color: #ffffff;
+            border: 2px solid transparent;
+            border-radius: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            text-decoration: none;
+            color: #1a1a1a;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+            outline-offset: 3px;
+        }
+
+        .botao-plataforma:hover,
+        .botao-plataforma:focus-visible {
+            border-color: var(--tg-theme-button-color, #2d7dfe);
+        }
+
+        .botao-plataforma:focus-visible {
+            outline: 3px solid var(--tg-theme-button-color, #2d7dfe);
+        }
+
+        .botao-plataforma img {
+            width: 3rem;
+            height: 3rem;
+            object-fit: contain;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .botao-plataforma:hover,
+            .botao-plataforma:focus-visible {
+                transform: scale(1.05);
+            }
+        }
+
+        #area-produtos {
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .titulo-secao {
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+            color: #333;
+            border-bottom: 3px solid var(--tg-theme-button-color, #2d7dfe);
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+        /* Aqui aplicamos o bloqueio de superalongamento (max-width: 220px) */
+        .grid-vitrine {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            text-align: left;
+        }
+
+        .card-produto {
+            background-color: #ffffff;
+            border-radius: 14px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 220px; 
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-produto:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .card-produto img {
+            width: 100%;
+            border-radius: 10px;
+            object-fit: cover;
+            aspect-ratio: 1 / 1;
+            margin-bottom: 12px;
+        }
+
+        .card-produto h3 {
+            font-size: 0.9rem;
+            margin: 0 0 10px 0;
+            color: #444;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+
+        .preco {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--tg-theme-button-color, #2d7dfe);
+            margin-bottom: 15px;
+        }
+
+        .btn-comprar {
+            background-color: var(--tg-theme-button-color, #2d7dfe);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn-comprar:hover {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+    <h2>🔥 Nossas Melhores Ofertas</h2>
+    <p>Escolha a plataforma abaixo e clique nela para ver as promoções de hoje.</p>
+
+    <!-- Botões das plataformas -->
+    <nav class="grade-plataformas" aria-label="Escolha a plataforma de ofertas">
+        <button class="botao-plataforma" data-plataforma="Mercado Livre" aria-label="Ver ofertas no Mercado Livre">
+            <img src="https://http2.mlstatic.com/frontend-assets/ui-navigation/5.19.1/mercadolibre/logo__small@2x.png" alt="Logo Mercado Livre" />
+            Mercado Livre
+        </button>
+
+        <button class="botao-plataforma" data-plataforma="Shopee" aria-label="Ver ofertas na Shopee">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fe/Shopee.svg" alt="Logo Shopee" />
+            Shopee
+        </button>
+
+        <button class="botao-plataforma" data-plataforma="Amazon" aria-label="Ver ofertas na Amazon">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Logo Amazon" />
+            Amazon
+        </button>
+
+        <button class="botao-plataforma" data-plataforma="AliExpress" aria-label="Ver ofertas no AliExpress">
+            <img src="https://cdn.simpleicons.org/aliexpress/FF4747" alt="Logo AliExpress" />
+            AliExpress
+        </button>
+    </nav>
+
+    <section id="area-produtos">
+        <h3 class="titulo-secao" id="titulo-plataforma">Ofertas Recentes</h3>
+        <div class="grid-vitrine" id="container-produtos">
+            <!-- Os cards entrarão aqui dinamicamente -->
+        </div>
+    </section>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        document.querySelectorAll(".botao-plataforma").forEach(function(botao) {
+            botao.addEventListener("click", function () {
+                const nomePlataforma = this.getAttribute("data-plataforma");
+                
+                // Muda o título e rola a tela suavemente para baixo
+                document.getElementById("titulo-plataforma").innerText = "Últimas ofertas: " + nomePlataforma;
+                document.getElementById("area-produtos").style.display = "block";
+                document.getElementById("area-produtos").scrollIntoView({ behavior: 'smooth' });
+                
+                const container = document.getElementById("container-produtos");
+                container.innerHTML = "<p>Carregando ofertas...</p>"; // Exibe mensagem temporária enquanto o túnel viaja
+
+                // A MÁGICA: O JavaScript liga direto no seu link público gerado no terminal
+                fetch('https://33f5505b22ad9f.lhr.life/api/vitrine/' + nomePlataforma)
+                    .then(response => response.json())
+                    .then(dados => {
+                        let listaProdutos = dados.produtos;
+                        
+                        container.innerHTML = ""; // Limpa a mensagem "Carregando..."
+                        
+                        if (!listaProdutos || listaProdutos.length === 0) {
+                            container.innerHTML = "<p>Nenhum resultado encontrado para esta plataforma.</p>";
+                            return;
+                        }
+
+                        // Constrói os cards dos produtos dinamicamente na tela
+                        listaProdutos.forEach(produto => {
+                            const card = `
+                                <div class="card-produto">
+                                    <img src="${produto.imagem}" alt="${produto.nome}" />
+                                    <h3>${produto.nome}</h3>
+                                    <div class="preco">${produto.preco}</div>
+                                    <a href="${produto.link}" class="btn-comprar" target="_blank" rel="noopener">Ver Oferta</a>
+                                </div>
+                            `;
+                            container.innerHTML += card;
+                        });
+                    })
+                    .catch(erro => {
+                        console.error("Erro na comunicação com o servidor via túnel:", erro);
+                        container.innerHTML = "<p>Nossas ofertas estão sendo atualizadas neste momento. Tente novamente em breve!</p>";
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

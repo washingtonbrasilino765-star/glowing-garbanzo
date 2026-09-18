@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uma mão na roda Ofertas — Publicar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12161d;
+    --surface: #1a2029;
+    --surface-2: #212836;
+    --border: #2a3241;
+    --text: #eef0f3;
+    --text-muted: #8b93a1;
+    --accent: #ff6b35;
+    --accent-dim: #a8481f;
+    --savings: #2dd4a7;
+    --error: #ff5c5c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 48px 20px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+
+  .wrap { width: 100%; max-width: 560px; }
+
+  .eyebrow-link {
+    color: var(--text-muted);
+    font-size: 13px;
+    text-decoration: none;
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 1.15;
+    margin: 0 0 4px;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0 0 32px;
+    max-width: 40ch;
+  }
+
+  fieldset {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 0 0 16px;
+  }
+
+  legend {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 0 6px;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 14px 0 6px;
+  }
+
+  label:first-of-type { margin-top: 0; }
+
+  input, select {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 0 0 20px;
+    min-height: 20px;
+  }
+
+  .preview .sem-produto { color: var(--text-muted); font-size: 13px; }
+
+  .preview .nome { font-weight: 600; font-size: 15px; margin: 0 0 8px; }
+
+  .preview .precos { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+  .preview .de { color: var(--text-muted); text-decoration: line-through; font-size: 14px; }
+
+  .preview .por {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--accent);
+  }
+
+  .preview .economia {
+    font-size: 12px;
+    color: var(--savings);
+    background: rgba(45, 212, 167, 0.12);
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  button {
+    width: 100%;
+    background: var(--accent);
+    color: #14161a;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  button:hover { background: #ff7f4f; }
+  button:disabled { background: var(--accent-dim); cursor: wait; }
+
+  .status {
+    margin-top: 14px;
+    font-size: 13px;
+    text-align: center;
+    min-height: 18px;
+  }
+
+  .status.ok { color: var(--savings); }
+  .status.err { color: var(--error); }
+
+  .hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow-link">Uma mão na roda Ofertas</span>
+  <h1>Publicar oferta</h1>
+  <p class="subtitle">Preenche os dados do produto e ele vai direto pro canal com botão de compra.</p>
+
+  <form id="form-oferta">
+    <fieldset>
+      <legend>Produto</legend>
+
+      <label for="nome_produto">Nome do produto</label>
+      <input id="nome_produto" required placeholder="Ex: Parafusadeira 21V Bivolt com Maleta">
+
+      <div class="row2">
+        <div>
+          <label for="plataforma">Plataforma</label>
+          <select id="plataforma">
+            <option>Mercado Livre</option>
+            <option>Shopee</option>
+            <option>Amazon</option>
+            <option>AliExpress</option>
+          </select>
+        </div>
+        <div>
+          <label for="slug">Identificador (slug)</label>
+          <input id="slug" required placeholder="parafusadeira-01">
+        </div>
+      </div>
+      <p class="hint">O slug precisa ser único a cada oferta — não repete um já usado.</p>
+
+      <label for="id_produto_original">Link do produto</label>
+      <input id="id_produto_original" required placeholder="https://meli.la/xxxxx">
+
+      <label for="imagem_url">Link da imagem (opcional)</label>
+      <input id="imagem_url" placeholder="https://http2.mlstatic.com/...">
+    </fieldset>
+
+    <fieldset>
+      <legend>Preço</legend>
+      <div class="row2">
+        <div>
+          <label for="preco_original">De (opcional)</label>
+          <input id="preco_original" type="number" step="0.01" min="0" placeholder="259.90">
+        </div>
+        <div>
+          <label for="preco_oferta">Por</label>
+          <input id="preco_oferta" type="number" step="0.01" min="0" required placeholder="127.93">
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="preview" id="preview">
+      <span class="sem-produto">A prévia da oferta aparece aqui conforme você preenche.</span>
+    </div>
+
+    <button type="submit" id="btn-enviar">Publicar no canal</button>
+    <p class="status" id="status"></p>
+  </form>
+</div>
+
+<script>
+  const API_URL = "http://127.0.0.1:8000/produtos";
+
+  const campos = ["nome_produto", "plataforma", "slug", "id_produto_original", "imagem_url", "preco_original", "preco_oferta"]
+    .reduce((acc, id) => { acc[id] = document.getElementById(id); return acc; }, {});
+
+  const preview = document.getElementById("preview");
+  const status = document.getElementById("status");
+  const botao = document.getElementById("btn-enviar");
+
+  function atualizarPreview() {
+    const nome = campos.nome_produto.value.trim();
+    const de = parseFloat(campos.preco_original.value);
+    const por = parseFloat(campos.preco_oferta.value);
+
+    if (!nome && !por) {
+      preview.innerHTML = '<span class="sem-produto">A prévia da oferta aparece aqui conforme você preenche.</span>';
+      return;
+    }
+
+    let precosHtml = "";
+    if (por) {
+      precosHtml += `<span class="por">R$ ${por.toFixed(2)}</span>`;
+      if (de && de > por) {
+        const economia = de - por;
+        const percentual = Math.round((economia / de) * 100);
+        precosHtml = `<span class="de">R$ ${de.toFixed(2)}</span>` + precosHtml +
+          `<span class="economia">-${percentual}% · economiza R$ ${economia.toFixed(2)}</span>`;
+      }
+    }
+
+    preview.innerHTML = `
+      <p class="nome">${nome || "Nome do produto"}</p>
+      <div class="precos">${precosHtml}</div>
+    `;
+  }
+
+  Object.values(campos).forEach(el => el.addEventListener("input", atualizarPreview));
+
+  // Preenche automaticamente se veio de um link com dados (ex: pelo bookmarklet)
+  (function preencherDaURL() {
+    const params = new URLSearchParams(window.location.search);
+    if (![...params.keys()].length) return;
+
+    for (const chave of Object.keys(campos)) {
+      const valor = params.get(chave);
+      if (valor) campos[chave].value = valor;
+    }
+    if (!campos.slug.value && campos.nome_produto.value) {
+      campos.slug.value = campos.nome_produto.value
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "")
+        .slice(0, 40) + "-" + Date.now().toString().slice(-4);
+    }
+    atualizarPreview();
+  })();
+
+  document.getElementById("form-oferta").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+
+    const corpo = {
+      slug: campos.slug.value.trim(),
+      plataforma: campos.plataforma.value,
+      id_produto_original: campos.id_produto_original.value.trim(),
+      nome_produto: campos.nome_produto.value.trim(),
+      preco_oferta: parseFloat(campos.preco_oferta.value),
+    };
+    if (campos.preco_original.value) corpo.preco_original = parseFloat(campos.preco_original.value);
+    if (campos.imagem_url.value.trim()) corpo.imagem_url = campos.imagem_url.value.trim();
+
+    botao.disabled = true;
+    botao.textContent = "Publicando...";
+    status.textContent = "";
+    status.className = "status";
+
+    try {
+      const resposta = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corpo),
+      });
+
+      const dados = await resposta.json().catch(() => ({}));
+
+      if (!resposta.ok) {
+        throw new Error(dados.detail || `Erro ${resposta.status}`);
+      }
+
+      status.textContent = "Publicado no canal! ✅";
+      status.className = "status ok";
+      document.getElementById("form-oferta").reset();
+      atualizarPreview();
+    } catch (erro) {
+      status.textContent = erro.message.includes("fetch")
+        ? "Não consegui falar com o servidor. Ele está rodando (uvicorn)?"
+        : erro.message;
+      status.className = "status err";
+    } finally {
+      botao.disabled = false;
+      botao.textContent = "Publicar no canal";
+    }
+  });
+</script>
+</body>
+</html>
