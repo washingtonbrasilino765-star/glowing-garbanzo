@@ -314,7 +314,7 @@ sessionStorage.setItem("API_SECRET_KEY", chaveApi);
        method: "POST",
 headers: {
   "Content-Type": "application/json",
-  "X-API-Key": sessionStorage.getItem("API_SECRET_KEY")
+  "X-API-Key": chaveApi
 },
 body: JSON.stringify(corpo),
       });
