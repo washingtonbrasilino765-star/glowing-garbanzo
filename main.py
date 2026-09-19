@@ -8,7 +8,7 @@ from typing import Optional
 import html
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
@@ -24,6 +24,7 @@ load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
 # --- ALTERAÇÃO 1: O sistema agora captura a URL do Netlify salva no seu .env ---
 URL_MINI_APP = os.getenv("URL_MINI_APP")
 # Sua tag de associado da Amazon (ex: seunome-20), cadastre no .env
