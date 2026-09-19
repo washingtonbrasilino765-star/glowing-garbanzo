@@ -41,9 +41,11 @@ app = FastAPI(title="Meu Encurtador de Afiliados")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://statuesque-choux-9132e6.netlify.app",
+    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 @app.get("/")
 def read_root():
