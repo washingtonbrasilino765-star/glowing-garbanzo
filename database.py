@@ -11,7 +11,11 @@ if not SQLALCHEMY_DATABASE_URL:
     raise RuntimeError("DATABASE_URL não foi configurada no ambiente.")
 
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300
+)
 
 SessionLocal = sessionmaker(
     autocommit=False,
