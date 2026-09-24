@@ -6,3 +6,4 @@ edge-tts
 requests
 httpx
 python-dotenv
+Pillow
