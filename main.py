@@ -9,7 +9,7 @@ from typing import Optional
 import html
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
@@ -25,6 +25,7 @@ load_dotenv()
 
 TELEGRAM_TOKEN =os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
 # --- ALTERAÇÃO 1: O sistema agora captura a URL do Netlify salva no seu .env ---
 URL_MINI_APP = os.getenv("URL_MINI_APP")
 # Sua tag de associado da Amazon (ex: seunome-20), cadastre no .env
@@ -42,11 +43,34 @@ app = FastAPI(title="Meu Encurtador de Afiliados")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://statuesque-choux-9132e6.netlify.app",
+    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
+# ==========================================
+# PROTEÇÃO DA API
+# ==========================================
+def verificar_chave_api(x_api_key: Optional[str] = Header(default=None)):
+    chave_correta = os.getenv("API_SECRET_KEY")
 
+    if not chave_correta:
+        raise HTTPException(
+            status_code=500,
+            detail="API_SECRET_KEY não configurada no servidor."
+        )
+
+    if x_api_key != chave_correta:
+        raise HTTPException(
+            status_code=401,
+            detail="Chave de API inválida."
+        )
+
+    return True
+@app.get("/")
+def read_root():
+    return {"status": "ok", "mensagem": "O servidor FastAPI está a rodar perfeitamente na nuvem!"}
 
 # ==========================================
 # MODELOS PYDANTIC
@@ -366,7 +390,7 @@ def pagina_vitrine():
          return "<h1>Arquivo index.html não encontrado na pasta! Coloque ele junto do main.py.</h1>"
     return caminho.read_text(encoding="utf-8")
 
-@app.post("/produtos")
+@app.post("/produtos", dependencies=[Depends(verificar_chave_api)])
 async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db)):
     """Recebe o produto, salva no banco e dispara foto e áudio para o Telegram."""
     link_existente = db.query(models.Link).filter(models.Link.slug == produto.slug).first()

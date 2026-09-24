@@ -226,7 +226,7 @@
 </div>
 
 <script>
-  const API_URL = "http://127.0.0.1:8000/produtos";
+  const API_URL = "https://glowing-garbanzo-noo0.onrender.com/produtos";
 
   const campos = ["nome_produto", "plataforma", "slug", "id_produto_original", "imagem_url", "preco_original", "preco_oferta"]
     .reduce((acc, id) => { acc[id] = document.getElementById(id); return acc; }, {});
@@ -301,12 +301,22 @@
     botao.textContent = "Publicando...";
     status.textContent = "";
     status.className = "status";
+const chaveApi = sessionStorage.getItem("API_SECRET_KEY") ||
+  prompt("Digite a chave de publicação:");
 
+if (!chaveApi) {
+  throw new Error("Publicação cancelada: chave não informada.");
+}
+
+sessionStorage.setItem("API_SECRET_KEY", chaveApi);
     try {
       const resposta = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(corpo),
+       method: "POST",
+headers: {
+  "Content-Type": "application/json",
+  "X-API-Key": chaveApi
+},
+body: JSON.stringify(corpo),
       });
 
       const dados = await resposta.json().catch(() => ({}));
