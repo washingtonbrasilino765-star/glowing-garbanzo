@@ -2,11 +2,4 @@ fastapi
 uvicorn
 sqlalchemy
 psycopg2-binary
-<<<<<<< HEAD
 edge-tts
-=======
-httpx
-python-dotenv
-pillow
-edge-tts
->>>>>>> 5e5191596b512985544da58cd721e02ff91c677c
