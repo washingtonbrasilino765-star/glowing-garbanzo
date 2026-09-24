@@ -3,6 +3,7 @@ import json
 import asyncio
 import pathlib
 from io import BytesIO
+import requests
 from datetime import datetime, timezone
 from typing import Optional
 import html
@@ -22,7 +23,7 @@ from database import SessionLocal, engine
 # Carrega as variáveis do arquivo .env
 load_dotenv()
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN =os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 # --- ALTERAÇÃO 1: O sistema agora captura a URL do Netlify salva no seu .env ---
 URL_MINI_APP = os.getenv("URL_MINI_APP")
@@ -356,6 +357,7 @@ def formulario():
     if not caminho.exists():
         raise HTTPException(status_code=404, detail="formulario.html não encontrado.")
     return caminho.read_text(encoding="utf-8")
+
 @app.get("/vitrine", response_class=HTMLResponse)
 def pagina_vitrine():
     """Serve a página da vitrine localmente para testes, evitando bloqueios do Chrome."""
@@ -470,6 +472,8 @@ async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db
     await enviar_voz_telegram(texto_para_leitura)
 
     return {"status": "sucesso", "produto": produto.nome_produto, "link": link_final}
+
+
 # ==========================================
 # ROTA DA VITRINE (NETLIFY)
 # ==========================================
@@ -479,57 +483,52 @@ def buscar_produtos_vitrine(nome_plataforma: str, db: Session = Depends(get_db))
     Rota consumida pelo Netlify. Recebe o nome da plataforma, busca no 
     banco de dados e devolve as últimas 20 ofertas formatadas em JSON.
     """
-    # 1. Ajuste de Busca:
-    # A vitrine vai enviar "Mercado Livre" (com espaço e maiúscula). 
-    # Precisamos garantir que bata com o que você salva no banco (ex: "mercadolivre" ou "Mercado Livre").
-    # Para ser seguro, fazemos uma busca flexível usando ILIKE (ignorando maiúsculas).
-    from sqlalchemy import func
-    
-    produtos_db = (
-        db.query(models.Link)
-        .filter(func.lower(models.Link.plataforma).like(f"%{nome_plataforma.lower()}%"))
-        .order_by(models.Link.gerado_em.desc())
-        .limit(20)
-        .all()
-    )
+    ofertas = db.query(models.Link).filter(models.Link.plataforma.ilike(nome_plataforma)).order_by(models.Link.id.desc()).limit(20).all()
+    return ofertas
 
-    if not produtos_db:
-        return {"status": "vazio", "produtos": []}
 
-    lista_produtos = []
-    for prod in produtos_db:
-        # 2. Resgate de Campos:
-        # Importante: Estou assumindo que o seu models.Link tem colunas como 'nome_produto', 
-        # 'imagem_url' e 'preco_oferta', baseando-me na sua classe ProdutoCreate.
-        # Caso o seu models.py chame a imagem de forma diferente (ex: prod.foto), 
-        # você precisará ajustar o termo após o "prod." abaixo.
+# ==========================================
+# ROTA DE TESTE DA IA DE VOZ
+# ==========================================
+@app.post("/api/gerar-voz", tags=["IA de Voz - Edge TTS"])
+async def gerar_voz_neural(texto_para_falar: str):
+    """
+    Recebe um texto, converte em voz neural realista usando o Edge TTS 
+    e envia o áudio diretamente para o grupo do Telegram.
+    """
+    try:
+        arquivo_audio = "voz_gerada.mp3"
+        voz = "pt-BR-FranciscaNeural" 
+        communicate = edge_tts.Communicate(texto_para_falar, voz)
         
-        # Formata o preço para o padrão brasileiro (ex: 52.99 -> 52,99)
-        preco_formatado = "0,00"
-        # O try/except garante que a página não quebre se houver um produto sem preço
-        try:
-            # Aqui buscamos os dados que você enviou pelo formulário web
-            # e que agora precisam estar no seu banco de dados
-            preco_float = getattr(prod, 'preco_oferta', 0.0) 
-            preco_formatado = f"{preco_float:.2f}".replace(".", ",")
-        except Exception:
-            pass
+        await communicate.save(arquivo_audio)
+        
+        token = os.getenv("TELEGRAM_TOKEN")
+        chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        
+        if token and chat_id:
+            url_telegram = f"https://api.telegram.org/bot{token}/sendAudio"
+            with open(arquivo_audio, "rb") as arquivo:
+                resposta = requests.post(
+                    url_telegram, 
+                    data={"chat_id": chat_id}, 
+                    files={"audio": arquivo}
+                )
+            
+            if os.path.exists(arquivo_audio):
+                os.remove(arquivo_audio)
+            
+            return {"status": "Sucesso", "mensagem": "Áudio gerado e enviado ao Telegram!"}
+        else:
+            return {"status": "Erro", "mensagem": "Faltam credenciais no .env."}
+            
+    except Exception as e:
+        return {"status": "Erro interno", "detalhe": str(e)}
 
-        nome_prod = getattr(prod, 'nome_produto', 'Produto sem título')
-        img_url = getattr(prod, 'imagem_url', 'https://via.placeholder.com/150')
 
-        lista_produtos.append({
-            "nome": nome_prod,
-            "imagem": img_url,
-            "preco": f"R$ {preco_formatado}",
-            # Aqui aproveitamos a sua lógica de encurtamento. A vitrine não manda
-            # direto pra loja, manda pro seu encurtador ({slug}), ativando a 
-            # sua rota redirecionar_link e contando o clique!
-            "link": f"/{prod.slug}" 
-        })
-
-    return {"status": "sucesso", "produtos": lista_produtos}
-
+# ==========================================
+# REDIRECIONAMENTO DE AFILIADO
+# ==========================================
 @app.get("/{slug}")
 def redirecionar_link(slug: str, db: Session = Depends(get_db)):
     """Recebe o clique do usuário e redireciona para a loja."""

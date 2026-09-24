@@ -1,14 +1,20 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Aqui é onde trocamos o destino! Saímos do SQLite e vamos para o PostgreSQL
-# Formato: postgresql://usuario:senha@localhost:porta/nome_do_banco
-SQLALCHEMY_DATABASE_URL = "postgresql://neondb_owner:npg_LSKNV73tMFgd@ep-billowing-morning-b5d2is71-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+# 1. Carrega as variáveis de ambiente declaradas no seu ficheiro .env
+load_dotenv()
 
-# Para PostgreSQL não precisamos do "check_same_thread" que o SQLite exigia
+# 2. O módulo 'os' busca a chave DATABASE_URL dentro do .env
+SQLALCHEMY_DATABASE_URL=os.getenv("DATABASE_URL")
+
+# 3. Cria o motor de conexão com o banco de dados Neon
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
+# 4. Configura a sessão do banco de dados
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# 5. Instância base para criação dos modelos/tabelas
 Base = declarative_base()
