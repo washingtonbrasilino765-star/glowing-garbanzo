@@ -9,7 +9,7 @@ from typing import Optional
 import html
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi import FastAPI, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
@@ -19,7 +19,6 @@ import edge_tts
 
 import models
 from database import SessionLocal, engine
-
 # Carrega as variáveis do arquivo .env
 load_dotenv()
 
@@ -554,14 +553,56 @@ async def gerar_voz_neural(texto_para_falar: str):
 # REDIRECIONAMENTO DE AFILIADO
 # ==========================================
 @app.get("/{slug}")
-def redirecionar_link(slug: str, db: Session = Depends(get_db)):
-    """Recebe o clique do usuário e redireciona para a loja."""
+def redirecionar_link(slug: str, request: Request, db: Session = Depends(get_db)):
+    """Recebe o clique do usuário, regista métricas detalhadas e redireciona para a loja."""
+    
+    # 1. Procura o link original no banco de dados
     link_db = db.query(models.Link).filter(models.Link.slug == slug).first()
 
     if not link_db:
         raise HTTPException(status_code=404, detail="Link não encontrado")
 
+    # ==========================================================
+    # INÍCIO DO SISTEMA DE RASTREAMENTO ANALÍTICO (ANALYTICS)
+    # ==========================================================
+    
+    # Captura o IP Real do utilizador.
+    # Em servidores Cloud como o Render, o 'x-forwarded-for' é essencial.
+    ip_real = request.headers.get("x-forwarded-for")
+    if ip_real:
+        # Pega apenas o primeiro IP caso o tráfego passe por múltiplos proxies
+        ip_real = ip_real.split(",")[0].strip()
+    else:
+        # Fallback de segurança para evitar erros 500 caso a rede não envie o header
+        ip_real = request.client.host if request.client else "Desconhecido"
+
+    # Captura o Dispositivo, Sistema Operativo e Navegador (User-Agent)
+    user_agent = request.headers.get("user-agent", "Desconhecido")
+    
+    # Captura a Origem do Tráfego (Referer)
+    referer = request.headers.get("referer", "Direto")
+
+    # Regista o clique detalhado instanciando a nova tabela
+    novo_clique = models.RegistoClique(
+        link_id=link_db.id,
+        ip_usuario=ip_real,
+        dispositivo=user_agent,
+        origem=referer
+    )
+    
+    # Prepara a gravação do log de tráfego na transação atual do banco de dados
+    db.add(novo_clique)
+
+    # ==========================================================
+    # FIM DO SISTEMA DE RASTREAMENTO
+    # ==========================================================
+
+    # 2. Atualiza o contador numérico global que já existia na sua arquitetura
+    if link_db.cliques is None:
+        link_db.cliques = 0
     link_db.cliques += 1
+    
+    # 3. Lógica original de expiração de links (Verificação de 20 horas)
     agora = datetime.now(timezone.utc)
     gerado_em = link_db.gerado_em
 
@@ -582,6 +623,10 @@ def redirecionar_link(slug: str, db: Session = Depends(get_db)):
             # vez de quebrar o clique de quem está comprando.
             pass
 
+    # 4. Salva absolutamente tudo no PostgreSQL de uma só vez.
+    # Este commit efetiva a criação do novo registo de clique E também
+    # as alterações no link_db (o +1 nos cliques e a regeneração do link, se ocorreu).
     db.commit()
 
+    # 5. Efetua o redirecionamento final com o código 302
     return RedirectResponse(url=link_db.link_afiliado_cache, status_code=302)
