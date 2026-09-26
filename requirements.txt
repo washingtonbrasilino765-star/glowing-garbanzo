@@ -7,3 +7,5 @@ requests
 httpx
 python-dotenv
 Pillow
+psycopg2-binary
+psycopg-binary
