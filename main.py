@@ -582,12 +582,35 @@ def redirecionar_link(slug: str, request: Request, db: Session = Depends(get_db)
     # Captura a Origem do Tráfego (Referer)
     referer = request.headers.get("referer", "Direto")
 
+    # --- NOVA SEÇÃO: DETETIVE DE GEOLOCALIZAÇÃO ---
+    cidade, estado, pais = None, None, None
+    
+    # Só faz a busca se tivermos um IP válido e não for IP de rede local (testes da sua própria máquina)
+    if ip_real and ip_real not in ["127.0.0.1", "localhost", "Desconhecido"]:
+        try:
+            # Faz a requisição à API gratuita (timeout ultra rápido de 2 segundos para não travar o clique)
+            resposta_geo = requests.get(f"http://ip-api.com/json/{ip_real}?fields=city,regionName,country", timeout=2)
+            dados_geo = resposta_geo.json()
+            
+            cidade = dados_geo.get("city")
+            estado = dados_geo.get("regionName")
+            pais = dados_geo.get("country")
+        except Exception as e:
+            # Se a API de mapas estiver fora do ar ou sem internet, ignora em silêncio.
+            # A regra de ouro é: NUNCA perder a venda/redirecionamento do cliente.
+            print(f"Erro ao buscar geolocalização: {e}")
+            pass
+    # ----------------------------------------------
+
     # Regista o clique detalhado instanciando a nova tabela
     novo_clique = models.RegistoClique(
         link_id=link_db.id,
         ip_usuario=ip_real,
         dispositivo=user_agent,
-        origem=referer
+        origem=referer,
+        cidade=cidade,     # <- Inserção da geolocalização
+        estado=estado,     # <- Inserção da geolocalização
+        pais=pais          # <- Inserção da geolocalização
     )
     
     # Prepara a gravação do log de tráfego na transação atual do banco de dados
@@ -618,9 +641,8 @@ def redirecionar_link(slug: str, request: Request, db: Session = Depends(get_db)
             )
             link_db.gerado_em = agora
         except ValueError:
-            # Não foi possível regenerar (ex: cadastro antigo de Mercado
-            # Livre sem link completo) — mantém o que já está em cache em
-            # vez de quebrar o clique de quem está comprando.
+            # Não foi possível regenerar (ex: cadastro antigo sem link completo) 
+            # mantém o que já está em cache em vez de quebrar o clique.
             pass
 
     # 4. Salva absolutamente tudo no PostgreSQL de uma só vez.
