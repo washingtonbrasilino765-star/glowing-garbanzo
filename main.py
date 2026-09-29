@@ -585,19 +585,22 @@ def redirecionar_link(slug: str, request: Request, db: Session = Depends(get_db)
     # --- NOVA SEÇÃO: DETETIVE DE GEOLOCALIZAÇÃO ---
     cidade, estado, pais = None, None, None
     
-    # Só faz a busca se tivermos um IP válido e não for IP de rede local (testes da sua própria máquina)
+    # Só faz a busca se tivermos um IP válido e não for IP de rede local
     if ip_real and ip_real not in ["127.0.0.1", "localhost", "Desconhecido"]:
         try:
-            # Faz a requisição à API gratuita (timeout ultra rápido de 2 segundos para não travar o clique)
-            resposta_geo = requests.get(f"http://ip-api.com/json/{ip_real}?fields=city,regionName,country", timeout=2)
+            # Trocando o provedor para um mais amigável com servidores Cloud (Render)
+            url_geo = f"https://ipwho.is/{ip_real}"
+            resposta_geo = requests.get(url_geo, timeout=3)
             dados_geo = resposta_geo.json()
             
-            cidade = dados_geo.get("city")
-            estado = dados_geo.get("regionName")
-            pais = dados_geo.get("country")
+            # ipwho.is retorna um campo "success" (true/false)
+            if dados_geo.get("success"):
+                cidade = dados_geo.get("city")
+                estado = dados_geo.get("region")
+                pais = dados_geo.get("country")
+            else:
+                print(f"API bloqueou ou não encontrou o IP: {dados_geo}")
         except Exception as e:
-            # Se a API de mapas estiver fora do ar ou sem internet, ignora em silêncio.
-            # A regra de ouro é: NUNCA perder a venda/redirecionamento do cliente.
             print(f"Erro ao buscar geolocalização: {e}")
             pass
     # ----------------------------------------------
