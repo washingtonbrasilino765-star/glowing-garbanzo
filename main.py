@@ -429,7 +429,7 @@ async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db
     db.add(novo_link)
     db.commit()
     db.refresh(novo_link)
-
+    
     # ========================================================
     # FILTRO DE SEGURANÇA PARA AMAZON E SHOPEE
     # ========================================================
@@ -454,11 +454,17 @@ async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db
     else:
         desconto = f"🔥 <b>Por apenas: R$ {produto.preco_oferta:.2f}</b>\n"
 
+    # ========================================================
+    # A SOLUÇÃO: GERANDO O LINK DO SEU ENCURTADOR RENDER
+    # ========================================================
+    link_rastreavel = f"https://glowing-garbanzo.onrender.com/{produto.slug}"
+
     mensagem = (
         f"💥 <b>ACHADINHO BOMBANDO NA {produto.plataforma.upper()}!</b> 💥\n\n"
         f"📦 <b>{titulo_seguro}</b>\n\n"
         f"{desconto}\n"
-        f"🛒 <b>Compre com segurança pelo link oficial abaixo 👇</b>\n\n"
+        f"🛒 <b>Compre com segurança pelo link oficial abaixo 👇</b>\n"
+        f"🔗 {link_rastreavel}\n\n"
         f"⚠️ <i>Preço sujeito a alteração a qualquer momento.</i>\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
     )
