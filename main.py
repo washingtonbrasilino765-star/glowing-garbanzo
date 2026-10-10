@@ -429,7 +429,7 @@ async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db
     db.add(novo_link)
     db.commit()
     db.refresh(novo_link)
-    
+
     # ========================================================
     # FILTRO DE SEGURANÇA PARA AMAZON E SHOPEE
     # ========================================================
@@ -457,7 +457,7 @@ async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db
     # ========================================================
     # A SOLUÇÃO: GERANDO O LINK DO SEU ENCURTADOR RENDER
     # ========================================================
-    link_rastreavel = f"https://glowing-garbanzo.onrender.com/{produto.slug}"
+    link_rastreavel = f"https://glowing-garbanzo-noo0.onrender.com/{produto.slug}"
 
     mensagem = (
         f"💥 <b>ACHADINHO BOMBANDO NA {produto.plataforma.upper()}!</b> 💥\n\n"
