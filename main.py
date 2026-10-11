@@ -19,8 +19,17 @@ import edge_tts
 
 import models
 from database import SessionLocal, engine
+
 # Carrega as variáveis do arquivo .env
 load_dotenv()
+
+# ==========================================================
+# FORÇA A CRIAÇÃO DE TODAS AS TABELAS QUE AINDA NÃO EXISTEM
+# ==========================================================
+models.Base.metadata.create_all(bind=engine)
+
+# (A partir daqui o seu código continua normalmente, 
+# provavelmente com algo como app = FastAPI()...)
 
 TELEGRAM_TOKEN =os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
