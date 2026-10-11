@@ -30,3 +30,18 @@ class RegistoClique(Base):
     ip_usuario = Column(String)
     dispositivo = Column(String)
     origem = Column(String)
+
+    class RegistoClique(Base):
+    __tablename__ = "registos_cliques"
+
+    id = Column(Integer, primary_key=True, index=True)
+    link_id = Column(Integer, ForeignKey("links.id"))
+    data_hora = Column(DateTime(timezone=True), server_default=func.now())
+    ip_usuario = Column(String)
+    dispositivo = Column(String)
+    origem = Column(String)
+    
+    # === ADICIONE ESTAS 3 LINHAS ABAIXO ===
+    cidade = Column(String, nullable=True)
+    estado = Column(String, nullable=True)
+    pais = Column(String, nullable=True)
