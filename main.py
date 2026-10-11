@@ -484,7 +484,7 @@ async def cadastrar_produto(produto: ProdutoCreate, db: Session = Depends(get_db
         imagem_bytes = await aplicar_marca_dagua(produto.imagem_url, texto_marca="@SeuCanal")
 
     # 4. Dispara a imagem com texto
-    await enviar_mensagem_telegram(mensagem, link_final, imagem_bytes)
+    await enviar_mensagem_telegram(mensagem, link_rastreavel, imagem_bytes)
 
     # 5. Dispara a narração em áudio
     texto_para_voz = produto.nome_produto if len(produto.nome_produto) < 80 else produto.nome_produto[:77] + "..."
