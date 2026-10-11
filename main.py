@@ -523,7 +523,16 @@ def buscar_produtos_vitrine(nome_plataforma: str, db: Session = Depends(get_db))
     """
     ofertas = db.query(models.Link).filter(models.Link.plataforma.ilike(nome_plataforma)).order_by(models.Link.id.desc()).limit(20).all()
     return ofertas
+# ==========================================
+# ROTA DA PÁGINA DO COLETOR
+# ==========================================
+from fastapi.responses import HTMLResponse
 
+@app.get("/instalar-coletor", response_class=HTMLResponse)
+async def pagina_instalar_coletor():
+    with open("instalar-coletor.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    return HTMLResponse(content=html)
 
 # ==========================================
 # ROTA DE TESTE DA IA DE VOZ
