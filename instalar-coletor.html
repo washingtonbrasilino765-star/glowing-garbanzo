@@ -120,9 +120,22 @@
       if(h1) dados.nome = h1.innerText.trim();
     }
     if(!dados.imagem){
-      const ogImg = document.querySelector('meta[property="og:image"]');
-      if(ogImg) dados.imagem = ogImg.content;
-    }
+  // 1ª Tentativa: Meta Tag oficial (a que você já tinha)
+  const ogImg = document.querySelector('meta[property="og:image"]');
+  if(ogImg) dados.imagem = ogImg.content;
+
+  // 2ª Tentativa: Seletores Clássicos de Computador
+  if(!dados.imagem){
+    const imgDesktop = document.querySelector('#landingImage, #imgBlkFront, .a-dynamic-image');
+    if(imgDesktop && imgDesktop.src) dados.imagem = imgDesktop.src;
+  }
+
+  // 3ª Tentativa: Seletores Específicos de Mobile/Tablet da Amazon
+  if(!dados.imagem){
+    const imgMobile = document.querySelector('#main-image-container img, #mobile-image-wrapper img, #aw-mobile-image-main, .a-carousel-img');
+    if(imgMobile && imgMobile.src) dados.imagem = imgMobile.src;
+  }
+}
     if(!dados.precoOferta || !dados.precoOriginal){
       const corpo = document.body.innerText;
       const achados = corpo.match(/R\\$\\s?[\\d.,]+/g) || [];
