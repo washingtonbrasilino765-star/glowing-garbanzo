@@ -9,7 +9,7 @@ from typing import Optional
 import html
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, Header, Request
+from fastapi import FastAPI, Depends, HTTPException, Header, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
@@ -641,16 +641,21 @@ def redirecionar_link(slug: str, request: Request, db: Session = Depends(get_db)
     )
     
     # Prepara a gravação do log de tráfego na transação atual do banco de dados
-    db.add(novo_clique)
+# === INÍCIO DO ESCUDO DE PROTEÇÃO ===
+    user_agent_atual = request.headers.get("user-agent", "").lower()
+    cookie_chefe = request.cookies.get("admin_bypass")
+    
+    e_robo = "facebookexternalhit" in user_agent_atual or "telegrambot" in user_agent_atual
+    e_chefe = (cookie_chefe == "true")
 
-    # ==========================================================
-    # FIM DO SISTEMA DE RASTREAMENTO
-    # ==========================================================
-
-    # 2. Atualiza o contador numérico global que já existia na sua arquitetura
-    if link_db.cliques is None:
-        link_db.cliques = 0
-    link_db.cliques += 1
+    # Só regista no banco e soma no contador se for cliente humano e não for o chefe
+    if not e_robo and not e_chefe:
+        db.add(novo_clique)
+        
+        if link_db.cliques is None:
+            link_db.cliques = 0
+        link_db.cliques += 1
+    # === FIM DO ESCUDO DE PROTEÇÃO ===
     
     # 3. Lógica original de expiração de links (Verificação de 20 horas)
     agora = datetime.now(timezone.utc)
@@ -679,3 +684,17 @@ def redirecionar_link(slug: str, request: Request, db: Session = Depends(get_db)
 
     # 5. Efetua o redirecionamento final com o código 302
     return RedirectResponse(url=link_db.link_afiliado_cache, status_code=302)
+
+    # === ROTAS DE ADMINISTRAÇÃO (CRACHÁ DE INVISIBILIDADE) ===
+
+@app.get("/modo-chefe")
+def ativar_modo_chefe(response: Response):
+    # Cria um cookie invisível no navegador que dura 1 ano (31536000 segundos)
+    response.set_cookie(key="admin_bypass", value="true", max_age=31536000)
+    return {"mensagem": "Cracha de invisibilidade ativado! Os seus cliques ja nao serao registados neste dispositivo."}
+
+@app.get("/sair-chefe")
+def desativar_modo_chefe(response: Response):
+    # Apaga o cookie caso você queira testar o rastreio
+    response.delete_cookie("admin_bypass")
+    return {"mensagem": "Modo chefe desativado. Os seus cliques voltam a ser rastreados."}
