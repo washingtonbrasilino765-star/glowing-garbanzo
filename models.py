@@ -31,7 +31,8 @@ class RegistoClique(Base):
     dispositivo = Column(String)
     origem = Column(String)
     
-    # === ADICIONE ESTAS 3 LINHAS ABAIXO ===
+    # === DADOS DE GEOLOCALIZACAO ===
     cidade = Column(String, nullable=True)
     estado = Column(String, nullable=True)
     pais = Column(String, nullable=True)
+    rua_bairro = Column(String, nullable=True) # Sem número por proteção de dados
